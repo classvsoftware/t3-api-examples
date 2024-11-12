@@ -5,14 +5,15 @@
 
 import csv
 import getpass
-import requests
 import os  # Import os for directory operations
 from datetime import datetime  # Import datetime for date stamping
 
+import requests
+
 # Constants
 BASE_URL = "https://api.trackandtrace.tools"
-USERNAME = "YOUR_USERNAME"  # Replace with your actual username
-HOSTNAME = "ca.metrc.com"  # Update this to your specific Metrc hostname
+USERNAME = "AGT017933"  # Replace with your actual username
+HOSTNAME = "mo.metrc.com"  # Update this to your specific Metrc hostname
 OUTPUT_DIR = "output"  # Directory to store the output files
 OUTPUT_CSV_TEMPLATE = os.path.join(OUTPUT_DIR, "licenses_{}.csv")  # Template for the output file name
 
