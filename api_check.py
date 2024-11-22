@@ -1,7 +1,6 @@
 import argparse
 import getpass
 import logging
-import pprint
 import sys
 from dataclasses import dataclass
 from typing import Dict, Optional
