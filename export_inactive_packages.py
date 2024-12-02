@@ -17,7 +17,7 @@ try:
 except ImportError:
     print("The 'requests' library is not installed.\n")
     print("To install it, run the following command:\n")
-    print("    pip install requests\n")
+    print("    pip3 install requests\n")
     print(
         "If you are using a virtual environment, make sure it is activated before running the command."
     )

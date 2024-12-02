@@ -1,7 +1,7 @@
 # Loads all active packages and writes the package data to a CSV
 #
 # To run this script from the command line, use:
-# python load_all_active_packages.py
+# python3 load_all_active_packages.py
 
 import csv
 import getpass

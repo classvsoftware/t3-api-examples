@@ -1,7 +1,7 @@
 # Loads all available licenses and writes the license data to a CSV
 #
 # To run this script from the command line, use:
-# python license_data_csv.py
+# python3 license_data_csv.py
 
 import csv
 import getpass
