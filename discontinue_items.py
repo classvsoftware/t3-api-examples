@@ -1,11 +1,8 @@
 import argparse
 import csv
-import datetime
 import getpass
 import logging
 import math
-import os
-import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -30,7 +27,7 @@ MAX_RETRIES = 5  # Maximum number of retry attempts
 RETRY_DELAY = 5  # Delay in seconds between retries
 MAX_WORKERS = 5  # Number of threads to use for parallel requests
 TIMEOUT_S = 20
-HISTORY_BATCH_SIZE = 25  # Number of history requests to run in parallel
+SUBMIT = "true"
 
 # Configure logging
 logging.basicConfig(
@@ -53,7 +50,7 @@ def parse_arguments() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         description="Discontinue items from CSV"
-        "This script authenticates with the provided credentials and discontinues a list of items in discontinue_items.csv."
+        "This script authenticates with the provided credentials and discontinues a list of items provided in a csv."
     )
     parser.add_argument(
         "--hostname",
@@ -65,22 +62,13 @@ def parse_arguments() -> argparse.Namespace:
         required=True,
         help="Username for authentication with the Track and Trace Tools API. Example: --username=user@example.com",
     )
+    parser.add_argument(
+        "--csv_path",
+        default="discontinue_items.csv",
+        help="Path to the input CSV file containing items to discontinue. Example: --csv=path/to/file.csv",
+    )
 
     return parser.parse_args()
-
-
-def flatten_dict(*, d: Dict, parent_key: str = "", sep: str = ".") -> Dict:
-    """
-    Flatten a nested dictionary.
-    """
-    items = []
-    for k, v in d.items():
-        new_key = f"{parent_key}{sep}{k}" if parent_key else k
-        if isinstance(v, dict):
-            items.extend(flatten_dict(d=v, parent_key=new_key, sep=sep).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
 
 
 def make_request_with_retries(
@@ -256,32 +244,39 @@ def select_license(*, licenses: List[Dict]) -> Optional[Dict]:
 
 
 
-def load_item_names(*, access_token: str, current_license: dict):
+def load_item_names_from_csv(*, csv_path: str) -> List[str]:
     """
-    Load item names
+    Load item names from the first column of a csv file
     """
-    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "discontinue_items.csv")
-
-    item_names = []
+    item_names: List[str] = []
 
     try:
         with open(csv_path, mode="r", newline="") as file:
             csv_reader = csv.reader(file)
-            headers = {
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            }
             for row in csv_reader:
                 if not row:  # Ensure the row is not empty
                     continue
-                logger.info(f"Processing sales receipt {row[0]}...")
-                unfinalize_receipt(receipt_id=row[0], current_license=current_license, headers=headers)
-                void_receipt(receipt_id=row[0], current_license=current_license, headers=headers)
-            logger.info("All receipts processed successfully.")
+                item_names.append(row[0])
     except FileNotFoundError:
-        logger.error("The file 'sales_receipts.csv' was not found. Please ensure the file exists in the script directory.")
+        logger.error(f"The file '{csv_path}' was not found. Please ensure the file exists in the script directory.")
+        raise
     except Exception as e:
         logger.error(f"An error occurred while processing the CSV file: {e}")
+        raise
+        
+    return item_names
+
+
+def discontinue_item(*, item_id: str, current_license: dict, headers: dict):
+    """
+    Discontinue an item.
+    """
+    url = f"{BASE_URL}/v2/items/discontinue"
+    params = {"licenseNumber": current_license["licenseNumber"], "submit": SUBMIT}
+    response = requests.post(url=url, headers=headers, params=params, json={"id": int(item_id)})
+    response.raise_for_status()
+    logger.info(f"Discontinued item {item_id}")
+
 
 
 def main():
@@ -291,7 +286,13 @@ def main():
     args = parse_arguments()
     hostname = args.hostname
     username = args.username
-    load_history = args.history
+    csv_path = args.csv_path
+
+    item_names = load_item_names_from_csv(csv_path=csv_path)
+    
+    print(item_names)
+    
+    
     password = getpass.getpass(prompt=f"Password for {hostname}/{username}: ")
 
     otp = None
@@ -321,13 +322,21 @@ def main():
             current_license = select_license(licenses=licenses)
             if not current_license:
                 return
-
+            
             items = load_items(
                 session=session,
                 headers=headers,
                 license_number=current_license["licenseNumber"],
             )
             
+            for item_name in item_names:
+                item = next((item for item in items if item['name'] == item_name), None)
+                
+                if item is None:
+                    logger.error(f"Failed to match item with name {item_name}")
+                    continue
+                    
+                discontinue_item(item_id=item["id"], current_license=current_license, headers=headers)
             
         except requests.exceptions.Timeout:
             logger.error(
