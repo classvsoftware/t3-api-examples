@@ -65,7 +65,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--csv_path",
         default="discontinue_items.csv",
-        help="Path to the input CSV file containing items to discontinue. Defaults to 'discontinue_items.csv'. Example: --csv=path/to/file.csv",
+        help="Path to the input CSV file containing items to discontinue. Defaults to 'discontinue_items.csv'. Example: --csv_path=path/to/file.csv",
     )
 
     return parser.parse_args()
