@@ -342,10 +342,14 @@ def write_to_csv(*, packages: List[Dict], license_number: str):
         )
 
         try:
-            with open(csv_path, mode="w", newline="") as csv_file:
+            with open(csv_path, mode="w", newline="", encoding="utf-8") as csv_file:
                 writer = csv.DictWriter(csv_file, fieldnames=ordered_fieldnames)
                 writer.writeheader()
-                writer.writerows(lab_results)
+                processed_rows = [
+                    {k: str(v).encode('utf-8', 'replace').decode('utf-8') for k, v in row.items()}
+                    for row in lab_results
+                ]
+                writer.writerows(processed_rows)
             logger.info(f"Report generated: {csv_path}")
         except IOError as e:
             logger.error(f"Failed to write CSV file: {str(e)}")
