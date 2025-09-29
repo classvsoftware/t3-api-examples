@@ -6,7 +6,9 @@
 # ]
 # ///
 
-# Usage: uv run discontinue_items_v3.py
+# Usage:    uv run discontinue_items.py
+#
+# Follow the instructions to bulk discontinue items
 #
 # This script discontinues selected items for a T3 license.
 # Make sure to have a CSV file with item names in the same directory
