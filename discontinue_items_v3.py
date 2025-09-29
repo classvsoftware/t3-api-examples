@@ -6,6 +6,12 @@
 # ]
 # ///
 
+# Usage: uv run discontinue_items_v3.py
+#
+# This script discontinues selected items for a T3 license.
+# Make sure to have a CSV file with item names in the same directory
+# before running the script.
+
 from t3api_utils.api.operations import send_api_request
 from t3api_utils.api.parallel import load_all_data_sync
 from t3api_utils.main.utils import (get_authenticated_client_or_error,
