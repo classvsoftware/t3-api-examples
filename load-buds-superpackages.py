@@ -24,7 +24,7 @@ def main():
         license_number=license["licenseNumber"],
         page_size=50,
         include="labResults",
-        filter="item.productCategoryName__eq:Bud/Flower"
+        filter="item.productCategoryName__eq:Buds"
     )
     
     interactive_collection_handler(data=all_packages)
