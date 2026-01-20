@@ -7,6 +7,9 @@
 # ///
 
 
+import os
+import shutil
+
 import httpx
 from t3api_utils.api.operations import get_collection
 from t3api_utils.api.parallel import load_all_data_sync
@@ -32,14 +35,47 @@ def main():
         }   
     )
     
-    print(response.json()['data'][0]['metadata'])
+    data = response.json()['data']
+
+    interactive_collection_handler(data=data)
+
+    # Clear and recreate output/images directory
+    output_dir = "output/images"
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir)
+    os.makedirs(output_dir)
+
+    # Download all images from metadata
+    auth_headers = {"Authorization": f"Bearer {api_client.access_token}"}
+
+    item = data[0]
     
-    # {'itemImages': [{'fileName': '(CUL03) Codes _ Green Bag _ Flower _ 3.5g _ [Strain]/Screenshot 2024-01-22 093354.png', 'fileType': 'ItemProductImage', 'imageFileId': 2890687, 'imageUrl': 'https://api.trackandtrace.tools/v2/items/photos?licenseNumber=CUL000003&itemId=2520568&imageFileId=2890687'}, {'fileName': '(CUL03) Codes _ Green Bag _ Flower _ 3.5g _ [Strain]/3.5g Bag Flower D9THCa label.png', 'fileType': 'ItemLabelImage', 'imageFileId': 2890688, 'imageUrl': 'https://api.trackandtrace.tools/v2/items/photos?licenseNumber=CUL000003&itemId=2520568&imageFileId=2890688'}, {'fileName': '(CUL03) Codes _ Green Bag _ Flower _ 3.5g _ [Strain]/Packaging Photo Codes Green Bag Flower 3.5g Prepack.png', 'fileType': 'ItemPackagingImage', 'imageFileId': 2890689, 'imageUrl': 'https://api.trackandtrace.tools/v2/items/photos?licenseNumber=CUL000003&itemId=2520568&imageFileId=2890689'}]}
-    
-    # interactive_collection_handler(data=items_page["data"])
+    metadata = item.get('metadata', {})
+    item_images = metadata.get('itemImages', [])
+
+    for image in item_images:
+        image_url = image.get('imageUrl')
+        file_name = image.get('fileName')
+
+        if not image_url or not file_name:
+            continue
+
+        # Use just the filename (strip any directory path in the name)
+        safe_filename = os.path.basename(file_name)
+        output_path = os.path.join(output_dir, file_name)
+
+        print(f"Downloading: {safe_filename}")
+
+        img_response = httpx.get(image_url, headers=auth_headers)
+
+        if img_response.status_code == 200:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            with open(output_path, 'wb') as f:
+                f.write(img_response.content)
+        else:
+            print(f"  Failed to download: {img_response.status_code}")
 
     
 
 if __name__ == "__main__":
-    main()
     main()
