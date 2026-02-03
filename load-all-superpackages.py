@@ -23,7 +23,9 @@ def main():
         path="/v2/packages/active/super",
         license_number=license["licenseNumber"],
         page_size=50,
-        include="labResults"
+        include="sourceHarvests",
+        collectionMask="label,sourceHarvests",
+        # filter="item.productCategoryName__eq:Buds"
     )
     
     interactive_collection_handler(data=all_packages)
