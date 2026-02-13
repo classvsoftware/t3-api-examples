@@ -378,13 +378,21 @@ def main():
     if use_same_item:
         body["useSameItem"] = True
 
-    # Submit the request. The API expects a list of package bodies (to
-    # support batch creation), so we wrap our single body in a list.
+    # Ask whether to submit to Metrc for real, or just save as a draft.
+    # submit=True sends the package to Metrc immediately and creates it.
+    # submit=False saves it as a draft in T3 that can be reviewed first.
+    submit = questionary.confirm(
+        "Submit to Metrc and create the package now?",
+        default=False,
+    ).ask()
+
+    # The API expects a list of package bodies (to support batch creation),
+    # so we wrap our single body in a list.
     send_api_request(
         client=api_client,
         path="/v2/packages/create",
         method="POST",
-        params={"licenseNumber": license["licenseNumber"], "submit": True},
+        params={"licenseNumber": license["licenseNumber"], "submit": submit},
         json_body=[body],
     )
 
