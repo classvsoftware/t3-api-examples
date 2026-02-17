@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.8"
 # dependencies = [
-#     "t3api_utils",
+#     "t3api_utils>=1.4.0",
 # ]
 # ///
 
@@ -19,8 +19,8 @@
 #   3. Generate a tiny 1x1 pixel PNG test image in memory
 #   4. Upload it to POST /v2/items/images/file
 
-import httpx
-from t3api_utils.main.utils import get_authenticated_client_or_error, pick_license
+from t3api_utils.main.utils import (get_authenticated_client_or_error,
+                                    pick_license, send_api_request)
 
 # A minimal valid 1x1 pixel red PNG file (67 bytes).
 # This avoids needing Pillow or any image library as a dependency.
@@ -47,17 +47,13 @@ def main():
 
     # -----------------------------------------------------------------------
     # Step 3: Upload the test image
-    #
-    # The API expects multipart/form-data with a "file" field.
-    # send_api_request only supports JSON bodies, so we use httpx directly.
     # -----------------------------------------------------------------------
     print("Uploading 1x1 test PNG image...")
 
-    response = httpx.post(
-        f"{api_client._config.host}/v2/items/images/file",
-        headers={
-            "Authorization": f"Bearer {api_client.access_token}",
-        },
+    data = send_api_request(
+        api_client,
+        "/v2/items/images/file",
+        method="POST",
         params={
             "licenseNumber": license["licenseNumber"],
             "fileType": "ItemProductImage",
@@ -66,15 +62,10 @@ def main():
         files={
             "file": ("test.png", TINY_PNG, "image/png"),
         },
-        timeout=30.0,
+        expected_status=201,
     )
 
-    if response.status_code == 201:
-        data = response.json()
-        print(f"Upload successful! imageFileId: {data['imageFileId']}")
-    else:
-        print(f"Upload failed with status {response.status_code}")
-        print(response.text)
+    print(f"Upload successful! imageFileId: {data['imageFileId']}")
 
 
 if __name__ == "__main__":

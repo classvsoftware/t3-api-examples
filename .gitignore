@@ -3,3 +3,4 @@ input/
 .DS_Store
 venv/
 .t3.env
+*.log
